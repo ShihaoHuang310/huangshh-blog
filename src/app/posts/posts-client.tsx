@@ -9,12 +9,19 @@ import { BlogPost } from "@/types/blog"
 import { ParticleBackground } from "@/components/three/particle-background"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Pagination } from "@/components/ui/pagination"
 
 interface PostsClientProps {
   posts: BlogPost[]
+  pagination?: {
+    currentPage: number
+    totalPages: number
+    total: number
+    pageSize: number
+  }
 }
 
-export function PostsClient({ posts }: PostsClientProps) {
+export function PostsClient({ posts, pagination }: PostsClientProps) {
   const [searchTerm, setSearchTerm] = React.useState("")
   const [selectedCategory, setSelectedCategory] = React.useState<string | null>(null)
   const [sortBy, setSortBy] = React.useState<"latest" | "popular" | "reading-time">("latest")
@@ -332,10 +339,10 @@ export function PostsClient({ posts }: PostsClientProps) {
                   >
                     <Link href={`/posts/${post.slug}`} className="block">
                       <div className={`card-enhanced rounded-lg overflow-hidden hover:border-primary/50 transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 cursor-pointer ${
-                        viewMode === "list" ? "flex" : "h-full flex flex-col"
+                        viewMode === "list" ? "flex h-48" : "h-full flex flex-col"
                       }`}>
-                        <div className={`relative overflow-hidden ${
-                          viewMode === "list" ? "w-48 flex-shrink-0" : "h-48"
+                        <div className={`relative overflow-hidden flex-shrink-0 ${
+                          viewMode === "list" ? "w-48" : "h-48"
                         }`}>
                           <img
                             src={post.coverImage}
@@ -356,14 +363,19 @@ export function PostsClient({ posts }: PostsClientProps) {
                             </div>
                           )}
                         </div>
-                        <div className={`p-6 ${viewMode === "list" ? "flex-1" : "flex-1 flex flex-col"}`}>
-                          <h3 className="text-lg font-semibold mb-2 group-hover:text-primary transition-colors line-clamp-1">
+                        <div className={`p-6 flex flex-col ${viewMode === "list" ? "flex-1" : "flex-1"}`}>
+                          {/* 标题 - 固定1行 */}
+                          <h3 className="text-lg font-semibold mb-3 group-hover:text-primary transition-colors line-clamp-1 min-h-[1.75rem]">
                             {post.title}
                           </h3>
-                          <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1">
+
+                          {/* 描述 - 固定3行，占据剩余空间 */}
+                          <p className="text-muted-foreground text-sm mb-4 line-clamp-3 flex-1 min-h-[4.5rem]">
                             {post.excerpt}
                           </p>
-                          <div className="flex items-center justify-between text-xs text-muted-foreground font-mono mt-auto">
+
+                          {/* 元信息 - 固定高度 */}
+                          <div className="flex items-center justify-between text-xs text-muted-foreground font-mono mb-3">
                             <div className="flex items-center space-x-4">
                               <div className="flex items-center space-x-1">
                                 <Calendar className="w-3 h-3" />
@@ -379,8 +391,10 @@ export function PostsClient({ posts }: PostsClientProps) {
                               </div>
                             </div>
                           </div>
+
+                          {/* 标签 - 固定高度 */}
                           {post.tags && post.tags.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-3">
+                            <div className="flex flex-wrap gap-1 min-h-[1.5rem]">
                               {post.tags.slice(0, 3).map((tag) => (
                                 <span
                                   key={tag}
@@ -405,8 +419,26 @@ export function PostsClient({ posts }: PostsClientProps) {
             )}
         </motion.div>
 
-        {/* Load More / Pagination could go here */}
-        {filteredPosts.length > 0 && (
+        {/* Pagination */}
+        {pagination && pagination.totalPages > 1 && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8 }}
+            className="mt-12"
+          >
+            <Pagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              total={pagination.total}
+              pageSize={pagination.pageSize}
+              basePath="/posts"
+            />
+          </motion.div>
+        )}
+
+        {/* End indicator for single page */}
+        {(!pagination || pagination.totalPages <= 1) && filteredPosts.length > 0 && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}

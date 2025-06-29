@@ -1,0 +1,7 @@
+{
+  "name": "React",
+  "slug": "react",
+  "description": "React 框架相关技术文章，包括 Hooks、组件设计、状态管理等",
+  "color": "#61DAFB",
+  "icon": "Code"
+}
