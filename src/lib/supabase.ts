@@ -43,6 +43,80 @@ export interface Category {
   updated_at: string
 }
 
+export interface Project {
+  id: string
+  title: string
+  description: string
+  tech: string[]
+  demo_url?: string
+  github_url?: string
+  featured: boolean
+  sort_order: number
+  status: 'active' | 'archived' | 'draft'
+  created_at: string
+  updated_at: string
+}
+
+export interface CodeExample {
+  id: string
+  title: string
+  description: string
+  language: string
+  code: string
+  sort_order: number
+  featured: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface Profile {
+  id: string
+  name: string
+  title: string
+  bio?: string
+  location?: string
+  email?: string
+  avatar_url?: string
+  github_url?: string
+  twitter_url?: string
+  linkedin_url?: string
+  website_url?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Skill {
+  id: string
+  name: string
+  level: number
+  category: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Timeline {
+  id: string
+  year: string
+  title: string
+  company?: string
+  description?: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export interface Stat {
+  id: string
+  label: string
+  value: string
+  icon?: string
+  command?: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
 export interface Tag {
   id: string
   name: string
@@ -303,5 +377,256 @@ export class ArticleAPI {
         totalTags: 0
       }
     }
+  }
+}
+
+/**
+ * 项目 API
+ */
+export class ProjectAPI {
+  /**
+   * 获取所有项目
+   */
+  static async getAllProjects(): Promise<Project[]> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('status', 'active')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('获取项目失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 获取精选项目
+   */
+  static async getFeaturedProjects(): Promise<Project[]> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('status', 'active')
+      .eq('featured', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('获取精选项目失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 根据 ID 获取项目
+   */
+  static async getProjectById(id: string): Promise<Project | null> {
+    const { data, error } = await supabase
+      .from('projects')
+      .select('*')
+      .eq('id', id)
+      .eq('status', 'active')
+      .single()
+
+    if (error) {
+      console.error('获取项目失败:', error)
+      return null
+    }
+
+    return data
+  }
+}
+
+/**
+ * 代码示例 API
+ */
+export class CodeExampleAPI {
+  /**
+   * 获取所有代码示例
+   */
+  static async getAllCodeExamples(): Promise<CodeExample[]> {
+    const { data, error } = await supabase
+      .from('code_examples')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('获取代码示例失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 获取精选代码示例
+   */
+  static async getFeaturedCodeExamples(): Promise<CodeExample[]> {
+    const { data, error } = await supabase
+      .from('code_examples')
+      .select('*')
+      .eq('featured', true)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('获取精选代码示例失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 根据语言获取代码示例
+   */
+  static async getCodeExamplesByLanguage(
+    language: string
+  ): Promise<CodeExample[]> {
+    const { data, error } = await supabase
+      .from('code_examples')
+      .select('*')
+      .eq('language', language)
+      .order('sort_order', { ascending: true })
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      console.error('获取代码示例失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+}
+
+/**
+ * 个人信息 API
+ */
+export class ProfileAPI {
+  /**
+   * 获取个人信息
+   */
+  static async getProfile(): Promise<Profile | null> {
+    const { data, error } = await supabase
+      .from('profile')
+      .select('*')
+      .limit(1)
+      .single()
+
+    if (error) {
+      console.error('获取个人信息失败:', error)
+      return null
+    }
+
+    return data
+  }
+}
+
+/**
+ * 技能 API
+ */
+export class SkillAPI {
+  /**
+   * 获取所有技能
+   */
+  static async getAllSkills(): Promise<Skill[]> {
+    const { data, error } = await supabase
+      .from('skills')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('level', { ascending: false })
+
+    if (error) {
+      console.error('获取技能失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 根据分类获取技能
+   */
+  static async getSkillsByCategory(category: string): Promise<Skill[]> {
+    const { data, error } = await supabase
+      .from('skills')
+      .select('*')
+      .eq('category', category)
+      .order('sort_order', { ascending: true })
+      .order('level', { ascending: false })
+
+    if (error) {
+      console.error('获取技能失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+
+  /**
+   * 获取技能分类
+   */
+  static async getSkillCategories(): Promise<string[]> {
+    const { data, error } = await supabase.from('skills').select('category')
+
+    if (error) {
+      console.error('获取技能分类失败:', error)
+      return []
+    }
+
+    const categories = [...new Set(data?.map((item) => item.category) || [])]
+    return categories
+  }
+}
+
+/**
+ * 时间线 API
+ */
+export class TimelineAPI {
+  /**
+   * 获取所有时间线
+   */
+  static async getAllTimeline(): Promise<Timeline[]> {
+    const { data, error } = await supabase
+      .from('timeline')
+      .select('*')
+      .order('sort_order', { ascending: true })
+      .order('year', { ascending: false })
+
+    if (error) {
+      console.error('获取时间线失败:', error)
+      return []
+    }
+
+    return data || []
+  }
+}
+
+/**
+ * 统计信息 API
+ */
+export class StatAPI {
+  /**
+   * 获取所有统计信息
+   */
+  static async getAllStats(): Promise<Stat[]> {
+    const { data, error } = await supabase
+      .from('stats')
+      .select('*')
+      .order('sort_order', { ascending: true })
+
+    if (error) {
+      console.error('获取统计信息失败:', error)
+      return []
+    }
+
+    return data || []
   }
 }

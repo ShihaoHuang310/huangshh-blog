@@ -57,33 +57,153 @@ NEXT_PUBLIC_GOOGLE_ANALYTICS_ID=your_ga_id
 2. 创建新项目
 3. 获取项目 URL 和 API 密钥
 
-#### 4.2 运行数据库脚本
+#### 4.2 创建数据库表
 
-```bash
-# 在 Supabase SQL 编辑器中运行
-# 复制 scripts/setup-database.sql 的内容并执行
+在 Supabase SQL 编辑器中**分别执行**以下 SQL 语句：
+
+```sql
+-- 1. 创建 projects 表
+CREATE TABLE IF NOT EXISTS projects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tech TEXT[] NOT NULL DEFAULT '{}',
+  demo_url TEXT,
+  github_url TEXT,
+  featured BOOLEAN DEFAULT FALSE,
+  sort_order INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'draft')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. 创建 code_examples 表
+CREATE TABLE IF NOT EXISTS code_examples (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  language TEXT NOT NULL,
+  code TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  featured BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. 创建 profile 表
+CREATE TABLE IF NOT EXISTS profile (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  bio TEXT,
+  location TEXT,
+  email TEXT,
+  avatar_url TEXT,
+  github_url TEXT,
+  twitter_url TEXT,
+  linkedin_url TEXT,
+  website_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 4. 创建 skills 表
+CREATE TABLE IF NOT EXISTS skills (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  level INTEGER NOT NULL CHECK (level >= 0 AND level <= 100),
+  category TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 5. 创建 timeline 表
+CREATE TABLE IF NOT EXISTS timeline (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  year TEXT NOT NULL,
+  title TEXT NOT NULL,
+  company TEXT,
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 6. 创建 stats 表
+CREATE TABLE IF NOT EXISTS stats (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  label TEXT NOT NULL,
+  value TEXT NOT NULL,
+  icon TEXT,
+  command TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. 启用 RLS
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE code_examples ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timeline ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stats ENABLE ROW LEVEL SECURITY;
+
+-- 8. 创建访问策略
+CREATE POLICY "Allow public read access" ON projects FOR SELECT USING (status = 'active');
+CREATE POLICY "Allow public read access" ON code_examples FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON profile FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON skills FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON timeline FOR SELECT USING (true);
+CREATE POLICY "Allow public read access" ON stats FOR SELECT USING (true);
 ```
 
-#### 4.3 验证数据库连接
+#### 4.3 验证数据库表
 
 ```bash
-yarn sync-content:check
+# 检查数据库表是否创建成功
+yarn check-tables
 ```
 
-### 5. 内容同步
+### 5. 数据同步
 
-#### 5.1 同步 Markdown 文件
+#### 5.1 同步项目数据
+
+```bash
+# 同步项目展示数据到数据库
+yarn sync-projects
+```
+
+#### 5.2 同步 About 页面数据
+
+```bash
+# 同步个人信息、技能、时间线、统计数据
+yarn sync-about
+```
+
+#### 5.3 同步 Markdown 文件
 
 ```bash
 # 同步 content 目录下的 Markdown 文件到数据库
 yarn sync-content
 ```
 
-#### 5.2 同步示例数据
+#### 5.4 同步示例数据
 
 ```bash
 # 同步预设的示例文章数据
 yarn sync-mock-posts
+```
+
+#### 5.5 验证数据同步
+
+```bash
+# 查看数据库中的数据
+yarn check-data
+
+# 验证数据一致性
+yarn verify-data
 ```
 
 ### 6. 启动开发服务器
@@ -125,15 +245,20 @@ yarn build                  # 构建生产版本
 yarn start                  # 启动生产服务器
 yarn lint                   # 代码检查
 
-# 内容管理
-yarn sync-content           # 同步 Markdown 内容
-yarn sync-content:check     # 检查数据库连接
-yarn sync-content:watch     # 监听文件变化并同步
-yarn sync-mock-posts        # 同步示例数据
+# 数据同步
+yarn sync-projects          # 同步项目数据
+yarn sync-about            # 同步 About 页面数据
+yarn sync-content          # 同步 Markdown 内容
+yarn sync-mock-posts       # 同步示例数据
 
-# 数据库
-yarn db:reset              # 重置数据库（如果需要）
-yarn db:seed               # 填充示例数据
+# 数据验证
+yarn check-tables          # 检查数据库表状态
+yarn check-data            # 查看数据库数据
+yarn verify-data           # 验证数据一致性
+
+# 数据库管理
+yarn sync-content:check    # 检查数据库连接
+yarn sync-content:watch    # 监听文件变化并同步
 ```
 
 ## 🎯 下一步
@@ -148,7 +273,13 @@ yarn db:seed               # 填充示例数据
 ### 数据库连接失败
 - 检查 Supabase URL 和密钥是否正确
 - 确认数据库表已创建
+- 运行 `yarn check-tables` 验证表状态
 - 运行 `yarn sync-content:check` 验证连接
+
+### 数据显示不完整
+- 运行 `yarn check-data` 查看数据库中的实际数据
+- 运行 `yarn verify-data` 验证数据一致性
+- 重新同步数据：`yarn sync-projects` 和 `yarn sync-about`
 
 ### 样式不生效
 - 确认 Tailwind CSS 配置正确
@@ -158,6 +289,12 @@ yarn db:seed               # 填充示例数据
 ### 文章不显示
 - 确认文章已同步到数据库
 - 检查文章状态是否为 `published`
+- 运行 `yarn sync-content` 重新同步
+
+### 项目页面数据不完整
+- 确认数据库表已创建：`yarn check-tables`
+- 重新同步项目数据：`yarn sync-projects`
+- 验证数据一致性：`yarn verify-data`
 - 验证文章格式是否正确
 
 ## 📞 获取帮助

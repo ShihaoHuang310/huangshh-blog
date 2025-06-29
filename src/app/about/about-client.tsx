@@ -8,30 +8,16 @@ import { Github, Twitter, Linkedin, Mail, MapPin, Calendar, Code, Coffee, Heart,
 import { Button } from "@/components/ui/button"
 import { ParticleBackground } from "@/components/three/particle-background"
 import { SkillTerminal, CodeStats, LiveCoding } from "@/components/ui/skill-terminal"
+import { Profile, Skill, Timeline, Stat } from "@/lib/supabase"
 
-const skills = [
-  { name: "React", level: 95, category: "Frontend" },
-  { name: "TypeScript", level: 90, category: "Frontend" },
-  { name: "Next.js", level: 88, category: "Frontend" },
-  { name: "JavaScript", level: 92, category: "Frontend" },
-  { name: "Three.js", level: 75, category: "Frontend" },
-  { name: "CSS/SCSS", level: 85, category: "Frontend" },
-  { name: "Tailwind CSS", level: 90, category: "Frontend" },
-  { name: "Node.js", level: 80, category: "Backend" },
-  { name: "PostgreSQL", level: 75, category: "Backend" },
-  { name: "Supabase", level: 85, category: "Backend" },
-  { name: "Git", level: 88, category: "Tools" },
-  { name: "Docker", level: 70, category: "Tools" },
-  { name: "AWS", level: 65, category: "Tools" },
-  { name: "Figma", level: 80, category: "Design" },
-]
+interface AboutClientProps {
+  profile: Profile | null
+  skills: Skill[]
+  timeline: Timeline[]
+  stats: Stat[]
+}
 
-const codeStats = [
-  { label: "Lines of Code Written", value: "100,000+", command: "git log --oneline | wc -l" },
-  { label: "GitHub Repositories", value: "50+", command: "gh repo list --limit 100 | wc -l" },
-  { label: "Years of Experience", value: "5+", command: "echo $(($(date +%Y) - 2019))" },
-  { label: "Coffee Cups", value: "∞", command: "echo 'while(true) { drink(coffee); code(); }'" },
-]
+
 
 const liveCodeExample = `// Welcome to my world of code
 const developer = {
@@ -52,46 +38,24 @@ const developer = {
 console.log(developer.getMotivation());
 // Output: "Building the future, one component at a time"`
 
-const timeline = [
-  {
-    year: "2024",
-    title: "高级前端工程师",
-    company: "科技公司",
-    description: "负责大型 React 应用的架构设计和开发，团队技术栈升级。",
-  },
-  {
-    year: "2022",
-    title: "前端工程师",
-    company: "创业公司",
-    description: "从零开始构建产品前端，使用 Next.js 和 TypeScript。",
-  },
-  {
-    year: "2020",
-    title: "初级前端开发者",
-    company: "互联网公司",
-    description: "学习现代前端技术栈，参与多个项目的开发和维护。",
-  },
-  {
-    year: "2019",
-    title: "计算机科学学士",
-    company: "某大学",
-    description: "主修计算机科学，专注于 Web 开发和软件工程。",
-  },
-]
-
-const stats = [
-  { label: "编程经验", value: "5+ 年", icon: Code },
-  { label: "博客文章", value: "50+ 篇", icon: Coffee },
-  { label: "开源项目", value: "10+ 个", icon: Github },
-  { label: "技术分享", value: "20+ 次", icon: Heart },
-]
-
-export function AboutClient() {
+export function AboutClient({ profile, skills, timeline, stats }: AboutClientProps) {
   const [isLoaded, setIsLoaded] = React.useState(false)
 
   React.useEffect(() => {
     setIsLoaded(true)
   }, [])
+
+  // 使用数据库数据
+  const displaySkills = skills
+  const displayTimeline = timeline
+  const displayStats = stats
+  const displayProfile = profile || {
+    name: "Frontend Developer",
+    title: "高级前端工程师",
+    bio: "热爱技术分享的前端开发者",
+    location: "Beijing, China",
+    avatar_url: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
+  }
 
   if (!isLoaded) {
     return (
@@ -137,8 +101,8 @@ export function AboutClient() {
               <div className="relative w-32 h-32 mx-auto mb-6">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full animate-pulse opacity-20"></div>
                 <Image
-                  src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"
-                  alt="Developer"
+                  src={displayProfile.avatar_url || "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face"}
+                  alt={displayProfile.name}
                   fill
                   className="rounded-full object-cover border-2 border-primary/30"
                 />
@@ -160,7 +124,7 @@ export function AboutClient() {
               </h1>
 
               <p className="text-lg text-muted-foreground leading-relaxed font-mono max-w-2xl mx-auto">
-                // 热爱技术分享的前端开发者
+                // {displayProfile.bio || "热爱技术分享的前端开发者"}
                 <br />
                 // 专注于创建美观且功能强大的用户界面
                 <br />
@@ -171,7 +135,7 @@ export function AboutClient() {
             <div className="flex items-center justify-center space-x-6 text-sm text-muted-foreground font-mono">
               <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4 text-blue-500" />
-                <span>Beijing, China</span>
+                <span>{displayProfile.location || "Beijing, China"}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Calendar className="h-4 w-4 text-green-500" />
@@ -211,7 +175,11 @@ export function AboutClient() {
             viewport={{ once: true }}
             className="max-w-4xl mx-auto"
           >
-            <CodeStats stats={codeStats} />
+            <CodeStats stats={displayStats.map(stat => ({
+              label: stat.label,
+              value: stat.value,
+              command: stat.command || ""
+            }))} />
           </motion.div>
         </section>
 
@@ -236,7 +204,7 @@ export function AboutClient() {
             </div>
             <LiveCoding code={liveCodeExample} />
             <div className="mt-4">
-              <span className="text-green-500 font-mono text-xl">}</span>
+              <span className="text-green-500 font-mono text-xl">{"}"}</span>
             </div>
           </motion.section>
 
@@ -258,9 +226,9 @@ export function AboutClient() {
                 // 我的技术技能树
               </p>
             </div>
-            <SkillTerminal skills={skills} />
+            <SkillTerminal skills={displaySkills} />
             <div className="mt-4">
-              <span className="text-green-500 font-mono text-xl">};</span>
+              <span className="text-green-500 font-mono text-xl">{"};"}</span>
             </div>
           </motion.section>
         </div>
@@ -286,7 +254,7 @@ export function AboutClient() {
           </div>
 
           <div className="max-w-4xl mx-auto">
-            {timeline.map((item, index) => (
+            {displayTimeline.map((item, index) => (
               <motion.div
                 key={index}
                 className="relative pl-12 pb-8 last:pb-0"
@@ -370,7 +338,7 @@ export function AboutClient() {
             </Button>
           </div>
           <div className="text-center">
-            <span className="text-green-500 font-mono text-xl">}</span>
+            <span className="text-green-500 font-mono text-xl">{"}"}</span>
           </div>
         </motion.section>
       </div>

@@ -4,6 +4,30 @@
 
 项目使用 Supabase (PostgreSQL) 作为数据库，包含以下主要表：
 
+## 📊 数据库状态
+
+### 当前实现状态
+- ✅ **文章系统**: 完整实现，包含文章、分类、标签
+- ✅ **内容同步**: Markdown 到数据库的自动同步
+- ✅ **项目展示**: 完整实现，包含项目和代码示例
+- ✅ **个人信息**: 完整实现，包含技能、时间线、统计
+- ✅ **数据验证**: 完整的数据一致性检查工具
+- ⏳ **用户系统**: 计划中
+- ⏳ **评论系统**: 计划中
+
+### 数据库表统计
+- **articles**: 文章数据
+- **categories**: 文章分类
+- **tags**: 文章标签
+- **projects**: 项目数据 (6 条记录)
+- **code_examples**: 代码示例 (3 条记录)
+- **profile**: 个人信息 (1 条记录)
+- **skills**: 技能数据 (14 条记录)
+- **timeline**: 时间线 (4 条记录)
+- **stats**: 统计信息 (8 条记录)
+
+## 📋 数据表结构
+
 ### 1. articles 表
 
 ```sql
@@ -54,6 +78,104 @@ CREATE TABLE tags (
 );
 ```
 
+### 4. projects 表
+
+```sql
+CREATE TABLE projects (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  tech TEXT[] NOT NULL DEFAULT '{}',
+  demo_url TEXT,
+  github_url TEXT,
+  featured BOOLEAN DEFAULT FALSE,
+  sort_order INTEGER DEFAULT 0,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived', 'draft')),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 5. code_examples 表
+
+```sql
+CREATE TABLE code_examples (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  title TEXT NOT NULL,
+  description TEXT NOT NULL,
+  language TEXT NOT NULL,
+  code TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  featured BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 6. profile 表
+
+```sql
+CREATE TABLE profile (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  title TEXT NOT NULL,
+  bio TEXT,
+  location TEXT,
+  email TEXT,
+  avatar_url TEXT,
+  github_url TEXT,
+  twitter_url TEXT,
+  linkedin_url TEXT,
+  website_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 7. skills 表
+
+```sql
+CREATE TABLE skills (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name TEXT NOT NULL,
+  level INTEGER NOT NULL CHECK (level >= 0 AND level <= 100),
+  category TEXT NOT NULL,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 8. timeline 表
+
+```sql
+CREATE TABLE timeline (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  year TEXT NOT NULL,
+  title TEXT NOT NULL,
+  company TEXT,
+  description TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 9. stats 表
+
+```sql
+CREATE TABLE stats (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  label TEXT NOT NULL,
+  value TEXT NOT NULL,
+  icon TEXT,
+  command TEXT,
+  sort_order INTEGER DEFAULT 0,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
 ## 🔧 Supabase 配置
 
 ### 1. 创建项目
@@ -92,6 +214,31 @@ CREATE TABLE tags (
   -- 表结构见上方
 );
 
+-- 创建项目相关表
+CREATE TABLE projects (
+  -- 表结构见上方
+);
+
+CREATE TABLE code_examples (
+  -- 表结构见上方
+);
+
+CREATE TABLE profile (
+  -- 表结构见上方
+);
+
+CREATE TABLE skills (
+  -- 表结构见上方
+);
+
+CREATE TABLE timeline (
+  -- 表结构见上方
+);
+
+CREATE TABLE stats (
+  -- 表结构见上方
+);
+
 -- 创建索引
 CREATE INDEX idx_articles_slug ON articles(slug);
 CREATE INDEX idx_articles_category ON articles(category);
@@ -103,6 +250,12 @@ CREATE INDEX idx_articles_featured ON articles(featured);
 ALTER TABLE articles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
 ALTER TABLE tags ENABLE ROW LEVEL SECURITY;
+ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
+ALTER TABLE code_examples ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profile ENABLE ROW LEVEL SECURITY;
+ALTER TABLE skills ENABLE ROW LEVEL SECURITY;
+ALTER TABLE timeline ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stats ENABLE ROW LEVEL SECURITY;
 
 -- 创建公开读取策略
 CREATE POLICY "Allow public read access" ON articles
@@ -112,6 +265,24 @@ CREATE POLICY "Allow public read access" ON categories
   FOR SELECT USING (true);
 
 CREATE POLICY "Allow public read access" ON tags
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public read access" ON projects
+  FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Allow public read access" ON code_examples
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public read access" ON profile
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public read access" ON skills
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public read access" ON timeline
+  FOR SELECT USING (true);
+
+CREATE POLICY "Allow public read access" ON stats
   FOR SELECT USING (true);
 ```
 
@@ -151,6 +322,87 @@ static async searchArticles(query: string): Promise<Article[]>
 static async incrementViewCount(slug: string): Promise<void>
 ```
 
+### ProjectAPI 类
+
+```typescript
+// 获取所有项目
+static async getAllProjects(): Promise<Project[]>
+
+// 获取精选项目
+static async getFeaturedProjects(): Promise<Project[]>
+
+// 根据 ID 获取项目
+static async getProjectById(id: string): Promise<Project | null>
+
+// 创建项目
+static async createProject(project: Omit<Project, 'id' | 'created_at' | 'updated_at'>): Promise<Project>
+
+// 更新项目
+static async updateProject(id: string, updates: Partial<Project>): Promise<Project>
+
+// 删除项目
+static async deleteProject(id: string): Promise<void>
+```
+
+### CodeExampleAPI 类
+
+```typescript
+// 获取所有代码示例
+static async getAllCodeExamples(): Promise<CodeExample[]>
+
+// 获取精选代码示例
+static async getFeaturedCodeExamples(): Promise<CodeExample[]>
+
+// 根据语言获取代码示例
+static async getCodeExamplesByLanguage(language: string): Promise<CodeExample[]>
+
+// 创建代码示例
+static async createCodeExample(example: Omit<CodeExample, 'id' | 'created_at' | 'updated_at'>): Promise<CodeExample>
+```
+
+### ProfileAPI 类
+
+```typescript
+// 获取个人信息
+static async getProfile(): Promise<Profile | null>
+
+// 更新个人信息
+static async updateProfile(updates: Partial<Profile>): Promise<Profile>
+```
+
+### SkillAPI 类
+
+```typescript
+// 获取所有技能
+static async getAllSkills(): Promise<Skill[]>
+
+// 根据分类获取技能
+static async getSkillsByCategory(category: string): Promise<Skill[]>
+
+// 创建技能
+static async createSkill(skill: Omit<Skill, 'id' | 'created_at' | 'updated_at'>): Promise<Skill>
+```
+
+### TimelineAPI 类
+
+```typescript
+// 获取所有时间线
+static async getAllTimeline(): Promise<Timeline[]>
+
+// 创建时间线项目
+static async createTimelineItem(item: Omit<Timeline, 'id' | 'created_at' | 'updated_at'>): Promise<Timeline>
+```
+
+### StatAPI 类
+
+```typescript
+// 获取所有统计
+static async getAllStats(): Promise<Stat[]>
+
+// 更新统计
+static async updateStat(id: string, updates: Partial<Stat>): Promise<Stat>
+```
+
 ## 📝 内容同步
 
 ### 1. Markdown 文件同步
@@ -166,20 +418,65 @@ yarn sync-content:check
 yarn sync-content:watch
 ```
 
-### 2. 示例数据同步
+### 2. 项目数据同步
+
+```bash
+# 同步项目数据
+yarn sync-projects
+
+# 同步 About 页面数据
+yarn sync-about
+
+# 检查数据库表状态
+yarn check-tables
+
+# 检查数据库数据
+yarn check-data
+
+# 验证数据一致性
+yarn verify-data
+```
+
+### 3. 示例数据同步
 
 ```bash
 # 同步预设的示例文章
 yarn sync-mock-posts
 ```
 
-### 3. 同步脚本说明
+### 4. 同步脚本说明
 
 #### sync-content.ts
 - 扫描 `content/` 目录下的 Markdown 文件
 - 解析 frontmatter 和内容
 - 自动生成 slug、阅读时间等
 - 同步到 Supabase 数据库
+
+#### sync-projects-data.ts
+- 同步项目数据到 projects 表
+- 同步代码示例到 code_examples 表
+- 包含完整的项目信息和代码示例
+
+#### sync-about-data.ts
+- 同步个人信息到 profile 表
+- 同步技能数据到 skills 表
+- 同步时间线到 timeline 表
+- 同步统计信息到 stats 表
+
+#### check-tables.ts
+- 检查数据库表是否存在
+- 验证表结构和权限
+- 统计数据行数
+
+#### check-data.ts
+- 显示数据库中的实际数据
+- 按分类展示详细信息
+- 用于数据验证
+
+#### verify-data-consistency.ts
+- 验证静态数据与数据库数据的一致性
+- 生成详细的数据对比报告
+- 确保页面显示正确
 
 #### sync-mock-posts.ts
 - 同步预设的示例文章数据

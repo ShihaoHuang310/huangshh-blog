@@ -10,7 +10,15 @@
     "sync-content": "tsx scripts/sync-content.ts",
     "sync-content:check": "tsx scripts/sync-content.ts --check",
     "sync-content:watch": "tsx watch scripts/sync-content.ts",
-    "sync-mock-posts": "tsx scripts/sync-mock-posts.ts"
+    "sync-mock-posts": "tsx scripts/sync-mock-posts.ts",
+    "sync-projects": "tsx scripts/sync-projects-data.ts",
+    "sync-about": "tsx scripts/sync-about-data.ts",
+    "sync-all": "yarn sync-content && yarn sync-mock-posts && yarn sync-projects && yarn sync-about",
+    "setup-db": "echo 'Please run the SQL script in scripts/setup-additional-tables.sql in your Supabase SQL editor'",
+    "create-tables": "tsx scripts/create-tables.ts",
+    "check-tables": "tsx scripts/check-tables.ts",
+    "check-data": "tsx scripts/check-data.ts",
+    "verify-data": "tsx scripts/verify-data-consistency.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.1.0",
