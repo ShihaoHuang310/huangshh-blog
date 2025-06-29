@@ -16,8 +16,8 @@ const footerLinks = {
   about: [
     { name: "about_me()", href: "/about" },
     { name: "contact.info()", href: "/contact" },
-    { name: "rss.subscribe()", href: "/rss.xml" },
-    { name: "sitemap.xml", href: "/sitemap.xml" },
+    { name: "rss.subscribe()", href: "/rss" },
+    { name: "sitemap.xml", href: "/sitemap" },
   ],
   legal: [
     { name: "privacy.policy", href: "/privacy" },
